@@ -1,9 +1,9 @@
 package com.example.orderservice.batch;
 
 import com.example.orderservice.dto.OrderExternalEventMessagePayload;
-import com.example.orderservice.jpa.Outbox;
-import com.example.orderservice.jpa.OutboxRepository;
-import com.example.orderservice.jpa.OutboxStatus;
+import com.example.orderservice.domain.Outbox;
+import com.example.orderservice.domain.OutboxRepository;
+import com.example.orderservice.domain.OutboxStatus;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +43,6 @@ public class OutboxBatchProcessor {
         for (Outbox outbox : failedOutboxEntries) {
             OrderExternalEventMessagePayload payload = outboxToPayload(outbox);
             try {
-                // Kafka 전송
                 kafkaTemplate.send(topic, objectMapper.writeValueAsString(payload)).thenAcceptAsync(
                         x -> {
                             outbox.changeSuccess(outbox);

@@ -1,6 +1,6 @@
-package com.example.orderservice.jpa;
+package com.example.orderservice.domain;
 
-import com.example.orderservice.dto.OrderExternalEventMessagePayload;
+import com.example.orderservice.dto.OrderDto;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -56,6 +56,11 @@ public class Outbox {
         this.orderId = orderId;
         this.message = message;
         this.isDelivered = isDelivered;
+    }
+
+    public static Outbox from(OrderDto orderDto) {
+
+        return null;
     }
 
     public void changeSuccess(Outbox outbox) {

@@ -1,7 +1,7 @@
 package com.example.orderservice.service;
 
 import com.example.orderservice.dto.OrderDto;
-import com.example.orderservice.jpa.OrderEntity;
+import com.example.orderservice.domain.OrderEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 public interface OrderService {

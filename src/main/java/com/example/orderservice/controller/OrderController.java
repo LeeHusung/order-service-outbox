@@ -1,25 +1,19 @@
 package com.example.orderservice.controller;
 
 import com.example.orderservice.dto.OrderDto;
-import com.example.orderservice.jpa.Aggregate;
-import com.example.orderservice.jpa.OrderEntity;
+import com.example.orderservice.domain.OrderEntity;
 //import com.example.orderservice.messagequeue.KafkaProducer;
 //import com.example.orderservice.messagequeue.OrderProducer;
-import com.example.orderservice.jpa.Outbox;
-import com.example.orderservice.jpa.OutboxRepository;
 //import com.example.orderservice.messagequeue.KafkaProducer;
 import com.example.orderservice.messagequeue.KafkaProducer;
 import com.example.orderservice.messagequeue.OrderProducer;
 import com.example.orderservice.service.OrderService;
 import com.example.orderservice.vo.RequestOrder;
 import com.example.orderservice.vo.ResponseOrder;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/order-service")

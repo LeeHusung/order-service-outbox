@@ -3,7 +3,8 @@ package com.example.orderservice.service;
 import com.example.orderservice.dto.OrderDto;
 import com.example.orderservice.dto.OrderExternalEventMessagePayload;
 import com.example.orderservice.event.OrderEventMessageListener;
-import com.example.orderservice.jpa.*;
+import com.example.orderservice.domain.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +31,7 @@ public class OrderEventService implements OrderService {
     @Override
     @Transactional
     //예외 처리 여기서 하는게 이게 맞냐? 애초에 하는게 맞냐?
-    public OrderDto createOrder(OrderDto orderDto) {
+    public OrderDto createOrder(OrderDto orderDto) throws JsonProcessingException {
         orderDto.setOrderId(UUID.randomUUID().toString());
         orderDto.setTotalPrice(orderDto.getQty() * orderDto.getUnitPrice());
 
@@ -39,16 +40,30 @@ public class OrderEventService implements OrderService {
         OrderEntity orderEntity = mapper.map(orderDto, OrderEntity.class);
 
         /**
-         * outbox pattern with polling with EventListener
+         * outbox pattern with polling with EventListener - 3번
          */
         orderRepository.save(orderEntity);
+        recordEventToOutboxTable(orderDto);
 
         //event 수신 메서드가 가 두 개 이상이면?
         applicationEventPublisher.publishEvent(OrderExternalEventMessagePayload.from(orderDto));
 
+        /**
+         * outbox pattern with polling with EventListener - 4번
+         */
+//        orderRepository.save(orderEntity);
+//
+//        //event 수신 메서드가 가 두 개 이상이면?
+//        applicationEventPublisher.publishEvent(OrderExternalEventMessagePayload.from(orderDto));
+
         log.info("Kafka Producer sent data from the Order microservice: " + orderDto);
         OrderDto returnValue = mapper.map(orderEntity, OrderDto.class);
         return returnValue;
+    }
+
+    private void recordEventToOutboxTable(OrderDto orderDto) throws JsonProcessingException {
+        Outbox outbox = new Outbox(Aggregate.ORDER, OutboxStatus.INIT, orderDto.getOrderId(), objectMapper.writeValueAsString(orderDto), false);
+        outboxRepository.save(outbox);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.example.orderservice.jpa;
+package com.example.orderservice.domain;
 
 import org.springframework.data.repository.CrudRepository;
 
