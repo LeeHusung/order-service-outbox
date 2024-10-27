@@ -1,19 +1,18 @@
-package com.example.orderservice.batch;
+package com.example.orderservice.top.v3;
 
-import com.example.orderservice.dto.OrderExternalEventMessagePayload;
-import com.example.orderservice.domain.Outbox;
-import com.example.orderservice.domain.OutboxRepository;
-import com.example.orderservice.domain.OutboxStatus;
+import com.example.orderservice.top.domain.Outbox;
+import com.example.orderservice.top.domain.OutboxRepository;
+import com.example.orderservice.top.domain.OutboxStatus;
+import com.example.orderservice.top.dto.OrderExternalEventMessagePayload;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Arrays;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import java.util.Arrays;
-import java.util.List;
 
 @Component
 @Slf4j

@@ -1,4 +1,4 @@
-package com.example.orderservice.domain;
+package com.example.orderservice.top.domain;
 
 import com.example.orderservice.dto.OrderDto;
 import jakarta.persistence.*;

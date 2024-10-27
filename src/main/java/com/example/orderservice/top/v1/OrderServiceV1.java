@@ -1,30 +1,30 @@
-package com.example.orderservice.service;
+package com.example.orderservice.top.v1;
 
-import com.example.orderservice.domain.*;
-import com.example.orderservice.dto.OrderDto;
-import com.example.orderservice.messagequeue.KafkaProducer;
 import com.example.orderservice.top.domain.Aggregate;
+import com.example.orderservice.domain.OrderEntity;
+import com.example.orderservice.domain.OrderRepository;
 import com.example.orderservice.top.domain.Outbox;
 import com.example.orderservice.top.domain.OutboxRepository;
 import com.example.orderservice.top.domain.OutboxStatus;
+import com.example.orderservice.dto.OrderDto;
+import com.example.orderservice.messagequeue.KafkaProducer;
+import com.example.orderservice.service.OrderService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.util.UUID;
-
-@Service
+//@Service
 @RequiredArgsConstructor
 @Slf4j
-public class OrderServiceImpl implements OrderService {
+public class OrderServiceV1 implements OrderService {
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
     private final OrderRepository orderRepository;
@@ -44,26 +44,15 @@ public class OrderServiceImpl implements OrderService {
         mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
         OrderEntity orderEntity = mapper.map(orderDto, OrderEntity.class);
 
-        /**
-         * outbox pattern with polling with OutboxProcessorTaskWithScheduling
-         * + @Transactional
-         */
-        Outbox outbox = mapToOutbox(orderDto);
-        outbox.setProductId(orderDto.getProductId());
-        outbox.setQty(orderDto.getQty());
-
-        orderRepository.save(orderEntity);
-        outboxRepository.save(outbox);
-
 
         /**
          * outbox pattern with polling with OutboxRetryTask
          * + 세밀한 트랜잭션 추가
          * https://medium.com/@egorponomarev/outbox-pattern-in-spring-boot-8e8cf116f044
          */
-//        Outbox outbox = mapToOutbox(orderDto);
-//        outbox.setProductId(orderDto.getProductId());
-//        outbox.setQty(orderDto.getQty());
+        Outbox outbox = mapToOutbox(orderDto);
+        outbox.setProductId(orderDto.getProductId());
+        outbox.setQty(orderDto.getQty());
 
 
         //이 코드는 왜 이 코드가 끝날 때 commit or rollback 이 발생하는게 아닌가?

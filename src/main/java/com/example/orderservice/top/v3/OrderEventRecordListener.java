@@ -1,15 +1,13 @@
-package com.example.orderservice.event;
+package com.example.orderservice.top.v3;
 
-import com.example.orderservice.dto.OrderExternalEventMessagePayload;
-import com.example.orderservice.domain.Aggregate;
-import com.example.orderservice.domain.Outbox;
-import com.example.orderservice.domain.OutboxRepository;
-import com.example.orderservice.domain.OutboxStatus;
+import com.example.orderservice.top.dto.OrderExternalEventMessagePayload;
+import com.example.orderservice.top.domain.Aggregate;
+import com.example.orderservice.top.domain.Outbox;
+import com.example.orderservice.top.domain.OutboxRepository;
+import com.example.orderservice.top.domain.OutboxStatus;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -26,7 +24,6 @@ public class OrderEventRecordListener {
         this.outboxRepository = outboxRepository;
     }
 
-    //4번
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void recordHandler(OrderExternalEventMessagePayload payload) throws JsonProcessingException {
         log.info("outbox save");

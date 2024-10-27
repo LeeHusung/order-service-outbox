@@ -1,9 +1,13 @@
-package com.example.orderservice.service;
+package com.example.orderservice.top.v2;
 
 import com.example.orderservice.dto.OrderDto;
-import com.example.orderservice.dto.OrderExternalEventMessagePayload;
-import com.example.orderservice.event.OrderEventMessageListener;
+import com.example.orderservice.top.domain.Aggregate;
+import com.example.orderservice.top.domain.Outbox;
+import com.example.orderservice.top.domain.OutboxRepository;
+import com.example.orderservice.top.domain.OutboxStatus;
+import com.example.orderservice.top.dto.OrderExternalEventMessagePayload;
 import com.example.orderservice.domain.*;
+import com.example.orderservice.service.OrderService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -12,20 +16,18 @@ import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-@Service
+//@Service
 @RequiredArgsConstructor
 @Slf4j
-public class OrderEventService implements OrderService {
+public class OrderServiceV2 implements OrderService {
     private final OutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
     private final OrderRepository orderRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
-    private final OrderEventMessageListener orderEventService;
     private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
@@ -47,14 +49,6 @@ public class OrderEventService implements OrderService {
 
         //event 수신 메서드가 가 두 개 이상이면?
         applicationEventPublisher.publishEvent(OrderExternalEventMessagePayload.from(orderDto));
-
-        /**
-         * outbox pattern with polling with EventListener - 4번
-         */
-//        orderRepository.save(orderEntity);
-//
-//        //event 수신 메서드가 가 두 개 이상이면?
-//        applicationEventPublisher.publishEvent(OrderExternalEventMessagePayload.from(orderDto));
 
         log.info("Kafka Producer sent data from the Order microservice: " + orderDto);
         OrderDto returnValue = mapper.map(orderEntity, OrderDto.class);

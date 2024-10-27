@@ -1,8 +1,8 @@
-package com.example.orderservice.event;
+package com.example.orderservice.top.v3;
 
-import com.example.orderservice.dto.OrderExternalEventMessagePayload;
-import com.example.orderservice.domain.Outbox;
-import com.example.orderservice.domain.OutboxRepository;
+import com.example.orderservice.top.dto.OrderExternalEventMessagePayload;
+import com.example.orderservice.top.domain.Outbox;
+import com.example.orderservice.top.domain.OutboxRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

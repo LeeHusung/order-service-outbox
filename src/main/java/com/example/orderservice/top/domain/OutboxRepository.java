@@ -1,4 +1,4 @@
-package com.example.orderservice.domain;
+package com.example.orderservice.top.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -19,6 +19,7 @@ public interface OutboxRepository extends JpaRepository<Outbox, Long> {
 
     //인덱스
     //성공 레코드 삭제 (delete 는 지양하는게 좋음) x
+    //쿼리 튜닝 필요함. 성능 느림.
     @Query("SELECT o FROM Outbox o WHERE o.status IN (:statuses)")
     List<Outbox> findByStatuses(List<OutboxStatus> statuses);
 }

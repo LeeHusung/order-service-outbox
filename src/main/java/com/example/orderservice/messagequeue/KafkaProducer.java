@@ -1,6 +1,6 @@
 package com.example.orderservice.messagequeue;
 
-import com.example.orderservice.domain.Outbox;
+import com.example.orderservice.top.domain.Outbox;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -35,19 +35,19 @@ public class KafkaProducer {
 //        return orderDto;
 //    }
 
-    public Outbox send(String topic, Outbox outbox) {
-        ObjectMapper mapper = new ObjectMapper();
-        String jsonInString = "";
-        try {
-            jsonInString = mapper.writeValueAsString(outbox);
-        } catch (JsonProcessingException ex) {
-            ex.printStackTrace();
-        }
-        System.out.println(jsonInString);
-
-        kafkaTemplate.send(topic, jsonInString);
-        log.info("Kafka Producer sent data from the Order microservice: " + outbox);
-
-        return outbox;
-    }
+//    public Outbox send(String topic, Outbox outbox) {
+//        ObjectMapper mapper = new ObjectMapper();
+//        String jsonInString = "";
+//        try {
+//            jsonInString = mapper.writeValueAsString(outbox);
+//        } catch (JsonProcessingException ex) {
+//            ex.printStackTrace();
+//        }
+//        System.out.println(jsonInString);
+//
+//        kafkaTemplate.send(topic, jsonInString);
+//        log.info("Kafka Producer sent data from the Order microservice: " + outbox);
+//
+//        return outbox;
+//    }
 }
