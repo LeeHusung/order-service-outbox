@@ -23,23 +23,29 @@ public class OutboxProcessorTaskWithScheduling {
     private final ObjectMapper objectMapper;
 
     public OutboxProcessorTaskWithScheduling(OutboxRepository outboxRepository,
-                                             KafkaTemplate<String, String> kafkaTemplate, @Value("${kafka.topic}") String topic, ObjectMapper objectMapper) {
+                                             KafkaTemplate<String, String> kafkaTemplate,
+                                             @Value("${kafka.outbox.topic}") String topic, ObjectMapper objectMapper) {
         this.outboxRepository = outboxRepository;
         this.kafkaTemplate = kafkaTemplate;
         this.topic = topic;
         this.objectMapper = objectMapper;
     }
 
-//    @Scheduled(fixedRate = 10000)
+    //    @Scheduled(fixedRate = 10000)
     @Transactional
-    public void process() throws JsonProcessingException {
+    public void process() {
         log.info("Task executed");
         List<Outbox> outboxes = outboxRepository.findTop10ByIsDelivered(false);
 
         //kafka가 다운되었을때 true 처리를 하면?
         for (Outbox outbox : outboxes) {
-            kafkaTemplate.send(topic,  objectMapper.writeValueAsString(OrderExternalEventMessagePayload.outboxToPayload(outbox)));
-
+            log.info("try retry outbox Id = {}", outbox.getId());
+            try {
+                kafkaTemplate.send("example-catalog-topic", objectMapper.writeValueAsString(
+                        OrderExternalEventMessagePayload.outboxToPayload(outbox)));
+            } catch (JsonProcessingException ex) {
+                log.error("error", ex);
+            }
             //이거 save() 안해도 true로 변경되나?
             outbox.setIsDelivered(true);
         }

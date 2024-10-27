@@ -66,4 +66,5 @@ management:
         include: health, httptrace, info, metrics, prometheus
 
 kafka:
-  topic: example-catalog-topic
+  outbox:
+    topic: example-catalog-topic

@@ -20,13 +20,18 @@ public record OutboxRetryTask(OutboxRepository outboxRepository,
                               KafkaTemplate<String, String> kafkaTemplate,
                               ObjectMapper objectMapper) {
 
-//    @Scheduled(fixedDelayString = "10000")
-    public void retry() throws JsonProcessingException {
+    //    @Scheduled(fixedDelayString = "10000")
+    public void retry() {
         List<Outbox> outboxEntities = outboxRepository.findAllBefore(LocalDateTime.now().minusSeconds(60));
         for (Outbox outbox : outboxEntities) {
             log.info("try retry outbox Id = {}", outbox.getId());
-            OrderExternalEventMessagePayload payload = OrderExternalEventMessagePayload.outboxToPayload(outbox);
-            kafkaTemplate.send("example-catalog-topic", objectMapper.writeValueAsString(payload));
+            try {
+                kafkaTemplate.send("example-catalog-topic", objectMapper.writeValueAsString(
+                        OrderExternalEventMessagePayload.outboxToPayload(outbox)));
+            } catch (JsonProcessingException ex) {
+                log.error("error", ex);
+            }
+
             outboxRepository.delete(outbox);
         }
     }
