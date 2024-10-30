@@ -19,6 +19,9 @@ public class KafkaProducerConfig {
         properties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "127.0.0.1:9092");
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        properties.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 60000);  // 1분 지나면 실패하도록 설정 (=메시지 유실됨)
+        properties.put(ProducerConfig.RETRIES_CONFIG, 3);                  // 재시도 횟수 설정
+        properties.put(ProducerConfig.RETRY_BACKOFF_MS_CONFIG, 500);       // 재시도 간 대기 시간 설정
 
         return new DefaultKafkaProducerFactory<>(properties);
     }

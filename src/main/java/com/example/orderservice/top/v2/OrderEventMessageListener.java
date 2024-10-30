@@ -10,7 +10,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-@Component
+//@Component
 @Slf4j
 public class OrderEventMessageListener {
 
@@ -35,10 +35,10 @@ public class OrderEventMessageListener {
     // 서버가 죽을 때 기존 실행중인 비동기 메서드를 모두 실행 완료할 때까지 설정함으로써 init을 없앨 수 있음.
     //but 양날의 검이다. 급하게 죽어야 하는데, 이 설정으로 인해 계속 살아있을 수 있음.
 
-    @TransactionalEventListener //after commit이란 말은, 이미 영속성 컨텍스트에서 flush 된 후, 여기는 다시 시작하는 거다.
+    @TransactionalEventListener
     public void handler(OrderExternalEventMessagePayload payload) {
         log.info("orderDto: {}", payload.toString());
-        log.info("Task executed");
+        log.info("OrderEventMessageListener Task executed");
 
         Outbox outbox = outboxRepository.findByOrderId(payload.getOrderId())
                 .orElseThrow(() -> new IllegalArgumentException("Outbox not found for order: " + payload.getOrderId()));
@@ -47,8 +47,6 @@ public class OrderEventMessageListener {
             kafkaTemplate.send(topic, objectMapper.writeValueAsString(payload)).thenAcceptAsync(
                     x -> {
                         outbox.changeSuccess(outbox);
-                        //SimpleJpaRepository(기본 spring data jpa 모든 리포지토리의 구현체) 의 cud 메서드에 @Transactional 달려있어서
-                        //이 메서드나 클래스에 안달려있어도 됨.
                         outboxRepository.save(outbox);
                     }
             ).exceptionallyAsync(e -> {

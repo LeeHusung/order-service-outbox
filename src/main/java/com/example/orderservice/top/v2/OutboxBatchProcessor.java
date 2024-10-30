@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 import java.util.Arrays;
 import java.util.List;
 
-@Component
+//@Component
 @Slf4j
 public class OutboxBatchProcessor {
 
@@ -41,7 +41,7 @@ public class OutboxBatchProcessor {
         log.info("Processing {} failed outbox messages", failedOutboxEntries.size());
 
         for (Outbox outbox : failedOutboxEntries) {
-            OrderExternalEventMessagePayload payload = outboxToPayload(outbox);
+            OrderExternalEventMessagePayload payload = OrderExternalEventMessagePayload.outboxToPayload(outbox);
             try {
                 kafkaTemplate.send(topic, objectMapper.writeValueAsString(payload)).thenAcceptAsync(
                         x -> {
@@ -59,12 +59,4 @@ public class OutboxBatchProcessor {
         }
     }
 
-    private OrderExternalEventMessagePayload outboxToPayload(Outbox outbox) {
-        return OrderExternalEventMessagePayload
-                .builder()
-                .orderId(outbox.getOrderId())
-                .qty(outbox.getQty())
-                .productId(outbox.getProductId())
-                .build();
-    }
 }

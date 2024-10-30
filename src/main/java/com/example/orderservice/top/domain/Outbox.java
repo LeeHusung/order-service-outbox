@@ -1,7 +1,8 @@
 package com.example.orderservice.top.domain;
 
-import com.example.orderservice.dto.OrderDto;
+import com.example.orderservice.domain.OrderEntity;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
@@ -29,15 +30,10 @@ public class Outbox {
     @Column(name = "status")
     private OutboxStatus status;
 
-    @Column(name = "message", length = 500)
-    private String message;
-
     private String orderId;
+    private String userId;
     private String productId;
     private Integer qty;
-
-    @Column(name = "is_delivered", nullable = false)
-    private Boolean isDelivered = false;
 
     @CreatedDate
     @Column(name = "created_at")
@@ -50,17 +46,17 @@ public class Outbox {
     public Outbox() {
     }
 
-    public Outbox(Aggregate aggregate, OutboxStatus status, String orderId, String message, Boolean isDelivered) {
+    @Builder
+    public Outbox(Aggregate aggregate, OutboxStatus status, String orderId, String userId, String productId,
+                  Integer qty, LocalDateTime createdAt, LocalDateTime lastModifiedAt) {
         this.aggregate = aggregate;
         this.status = status;
         this.orderId = orderId;
-        this.message = message;
-        this.isDelivered = isDelivered;
-    }
-
-    public static Outbox from(OrderDto orderDto) {
-
-        return null;
+        this.userId = userId;
+        this.productId = productId;
+        this.qty = qty;
+        this.createdAt = createdAt;
+        this.lastModifiedAt = lastModifiedAt;
     }
 
     public void changeSuccess(Outbox outbox) {

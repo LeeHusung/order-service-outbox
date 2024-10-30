@@ -5,7 +5,7 @@ import com.example.orderservice.domain.OrderEntity;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 public interface OrderService {
-    OrderDto createOrder(OrderDto orderDetails) throws JsonProcessingException;
+    OrderDto createOrder(OrderDto orderDetails);
     OrderDto getOrderByOrderId(String orderId);
     Iterable<OrderEntity> getOrdersByUserId(String userId);
 }

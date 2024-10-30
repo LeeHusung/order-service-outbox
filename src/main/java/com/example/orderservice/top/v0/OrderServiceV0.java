@@ -23,14 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class OrderServiceV0 implements OrderService {
     private final OutboxRepository outboxRepository;
-    private final ObjectMapper objectMapper;
     private final OrderRepository orderRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
 
     @Override
     @Transactional
-    //예외 처리 여기서 하는게 이게 맞냐? 애초에 하는게 맞냐?
-    public OrderDto createOrder(OrderDto orderDto) throws JsonProcessingException {
+    public OrderDto createOrder(OrderDto orderDto) {
         orderDto.setOrderId(UUID.randomUUID().toString());
         orderDto.setTotalPrice(orderDto.getQty() * orderDto.getUnitPrice());
 
@@ -38,25 +36,25 @@ public class OrderServiceV0 implements OrderService {
         mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
         OrderEntity orderEntity = mapper.map(orderDto, OrderEntity.class);
 
-        /**
-         * outbox pattern with polling with OutboxProcessorTaskWithScheduling
-         * + @Transactional
-         */
-        Outbox outbox = mapToOutbox(orderDto);
-        outbox.setProductId(orderDto.getProductId());
-        outbox.setQty(orderDto.getQty());
+        Outbox outbox = mapToOutbox(orderEntity);
 
         orderRepository.save(orderEntity);
         outboxRepository.save(outbox);
 
-        OrderDto returnValue = mapper.map(orderEntity, OrderDto.class);
-
-        return returnValue;
+        return mapper.map(orderEntity, OrderDto.class);
     }
 
     //일단 여기서 만들고 위치 고민해봐야 함.
-    private Outbox mapToOutbox(OrderDto orderDto) throws JsonProcessingException {
-        return new Outbox(Aggregate.ORDER, OutboxStatus.INIT, orderDto.getOrderId(), objectMapper.writeValueAsString(orderDto), false);
+    private Outbox mapToOutbox(OrderEntity orderEntity) {
+        return  Outbox.builder().
+                aggregate(Aggregate.ORDER)
+                .status(OutboxStatus.INIT)
+                .createdAt(orderEntity.getCreatedAt())
+                .qty(orderEntity.getQty())
+                .productId(orderEntity.getProductId())
+                .userId(orderEntity.getUserId())
+                .orderId(orderEntity.getOrderId())
+                .build();
     }
 
     @Override

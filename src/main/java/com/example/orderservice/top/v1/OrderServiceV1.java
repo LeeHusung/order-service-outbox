@@ -9,6 +9,7 @@ import com.example.orderservice.top.domain.OutboxStatus;
 import com.example.orderservice.dto.OrderDto;
 import com.example.orderservice.messagequeue.KafkaProducer;
 import com.example.orderservice.service.OrderService;
+import com.example.orderservice.top.dto.OrderExternalEventMessagePayload;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.UUID;
@@ -16,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,17 +28,18 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Slf4j
 public class OrderServiceV1 implements OrderService {
     private final OutboxRepository outboxRepository;
-    private final ObjectMapper objectMapper;
     private final OrderRepository orderRepository;
-    private final KafkaProducer kafkaProducer;
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final TransactionTemplate transactionTemplate;
-    private final PlatformTransactionManager transactionManager;
+    private final ObjectMapper objectMapper;
+    @Value("${kafka.outbox.topic}")
+    private final String topic;
+
 
     @Override
-    @Transactional
+//    @Transactional
     //예외 처리 여기서 하는게 이게 맞냐? 애초에 하는게 맞냐?
-    public OrderDto createOrder(OrderDto orderDto) throws JsonProcessingException {
+    public OrderDto createOrder(OrderDto orderDto) {
         orderDto.setOrderId(UUID.randomUUID().toString());
         orderDto.setTotalPrice(orderDto.getQty() * orderDto.getUnitPrice());
 
@@ -44,16 +47,7 @@ public class OrderServiceV1 implements OrderService {
         mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
         OrderEntity orderEntity = mapper.map(orderDto, OrderEntity.class);
 
-
-        /**
-         * outbox pattern with polling with OutboxRetryTask
-         * + 세밀한 트랜잭션 추가
-         * https://medium.com/@egorponomarev/outbox-pattern-in-spring-boot-8e8cf116f044
-         */
-        Outbox outbox = mapToOutbox(orderDto);
-        outbox.setProductId(orderDto.getProductId());
-        outbox.setQty(orderDto.getQty());
-
+        Outbox outbox = mapToOutbox(orderEntity);
 
         //이 코드는 왜 이 코드가 끝날 때 commit or rollback 이 발생하는게 아닌가?
         transactionTemplate.executeWithoutResult(transactionStatus -> {
@@ -71,33 +65,31 @@ public class OrderServiceV1 implements OrderService {
         //outbox 테이블에 저장된 내용을 retry로 읽어서 kafka가 다시 살아났을 때 데이터 일관성 맞추고 싶어
         //지금은 kafka가 성공하든 실패하든 delete는 무조건 발생한다. 이러면 안돼. callback이든, 동기든 send가 실패하면 delete도 실패하고
         //send가 성공해야 delete도 성공해야 한다.
-//        orderDto.setMessageId(UUID.randomUUID().toString());
-        ObjectMapper mapper222 = new ObjectMapper();
-        String jsonInString = "";
+        OrderExternalEventMessagePayload payload = OrderExternalEventMessagePayload.outboxToPayload(outbox);
         try {
-            jsonInString = mapper222.writeValueAsString(orderDto);
-        } catch (JsonProcessingException ex) {
-            ex.printStackTrace();
+            kafkaTemplate.send(topic, objectMapper.writeValueAsString(payload)).thenAccept(
+                    (x) -> outboxRepository.delete(outbox)
+            );
+        } catch (JsonProcessingException e) {
+            log.error(e.getMessage());
         }
-        System.out.println(jsonInString);
-
-        kafkaTemplate.send("example-catalog-topic", jsonInString).thenAccept(
-                (x) -> outboxRepository.delete(outbox)
-        );
 
         log.info("Kafka Producer sent data from the Order microservice: " + orderDto);
 
-//        kafkaProducer.send("example-catalog-topic", orderDto);
-//        outboxRepository.delete(outbox);
-
-        OrderDto returnValue = mapper.map(orderEntity, OrderDto.class);
-
-        return returnValue;
+        return mapper.map(orderEntity, OrderDto.class);
     }
 
     //일단 여기서 만들고 위치 고민해봐야 함.
-    private Outbox mapToOutbox(OrderDto orderDto) throws JsonProcessingException {
-        return new Outbox(Aggregate.ORDER, OutboxStatus.INIT, orderDto.getOrderId(), objectMapper.writeValueAsString(orderDto), false);
+    private Outbox mapToOutbox(OrderEntity orderEntity) {
+        return  Outbox.builder().
+                aggregate(Aggregate.ORDER)
+                .status(OutboxStatus.INIT)
+                .createdAt(orderEntity.getCreatedAt())
+                .qty(orderEntity.getQty())
+                .productId(orderEntity.getProductId())
+                .userId(orderEntity.getUserId())
+                .orderId(orderEntity.getOrderId())
+                .build();
     }
 
 

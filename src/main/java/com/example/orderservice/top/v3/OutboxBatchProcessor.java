@@ -14,7 +14,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-@Component
+//@Component
 @Slf4j
 public class OutboxBatchProcessor {
 
@@ -26,7 +26,7 @@ public class OutboxBatchProcessor {
     public OutboxBatchProcessor(KafkaTemplate<String, String> kafkaTemplate,
                                 OutboxRepository outboxRepository,
                                 ObjectMapper objectMapper,
-                                @Value("${kafka.topic}") String topic) {
+                                @Value("${kafka.outbox.topic}") String topic) {
         this.kafkaTemplate = kafkaTemplate;
         this.outboxRepository = outboxRepository;
         this.objectMapper = objectMapper;
@@ -39,31 +39,27 @@ public class OutboxBatchProcessor {
 
         log.info("Processing {} failed outbox messages", failedOutboxEntries.size());
 
+        //비동기로 안했을 때 왜 위에 1개가 있는데, 아래 로그가 하나도 안나오지?
+        //status도  init이다
         for (Outbox outbox : failedOutboxEntries) {
-            OrderExternalEventMessagePayload payload = outboxToPayload(outbox);
+            OrderExternalEventMessagePayload payload = OrderExternalEventMessagePayload.outboxToPayload(outbox);
             try {
-                kafkaTemplate.send(topic, objectMapper.writeValueAsString(payload)).thenAcceptAsync(
-                        x -> {
-                            outbox.changeSuccess(outbox);
-                            outboxRepository.save(outbox);
-                        }
-                ).exceptionallyAsync(e -> {
-                    log.error("Kafka 전송 실패: ", e);
-                    outbox.changeFail(outbox);
-                    return null;
-                });
-            } catch (JsonProcessingException e) {
-                log.error("Error serializing payload for outbox id: {}", outbox.getId(), e);
+                kafkaTemplate.send(topic, objectMapper.writeValueAsString(payload))
+                        .handleAsync((result, ex) -> {
+                            if (ex != null) {
+                                log.info("Kafka 전송 실패: ", ex);
+                                outbox.changeFail(outbox);
+                                outboxRepository.save(outbox);
+                            } else {
+                                outbox.changeSuccess(outbox);
+                                outboxRepository.save(outbox);
+                            }
+                            return null;
+                        });
+            } catch (Exception e) {
+                log.info("Error serializing payload for outbox id: {}", outbox.getId(), e);
             }
         }
     }
 
-    private OrderExternalEventMessagePayload outboxToPayload(Outbox outbox) {
-        return OrderExternalEventMessagePayload
-                .builder()
-                .orderId(outbox.getOrderId())
-                .qty(outbox.getQty())
-                .productId(outbox.getProductId())
-                .build();
-    }
 }
