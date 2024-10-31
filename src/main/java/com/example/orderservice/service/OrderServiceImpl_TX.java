@@ -1,32 +1,24 @@
-package com.example.orderservice.top.v3;
+package com.example.orderservice.service;
 
-import com.example.orderservice.domain.OrderEntity;
-import com.example.orderservice.domain.OrderRepository;
-import com.example.orderservice.top.domain.OutboxRepository;
+import com.example.orderservice.domain.*;
 import com.example.orderservice.dto.OrderDto;
-import com.example.orderservice.service.OrderService;
-import com.example.orderservice.top.dto.OrderExternalEventMessagePayload;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
-
+import com.example.orderservice.messagequeue.KafkaProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 //@Service
 @RequiredArgsConstructor
 @Slf4j
-public class OrderServiceV3 implements OrderService {
+public class OrderServiceImpl_TX implements OrderService {
+
     private final OrderRepository orderRepository;
-    private final KafkaTemplate<String, String> kafkaTemplate;
-    private final ApplicationEventPublisher applicationEventPublisher;
+    private final KafkaProducer kafkaProducer;
 
     @Override
     @Transactional
@@ -38,16 +30,11 @@ public class OrderServiceV3 implements OrderService {
         mapper.getConfiguration().setMatchingStrategy(MatchingStrategies.STRICT);
         OrderEntity orderEntity = mapper.map(orderDto, OrderEntity.class);
 
-        /**
-         * outbox pattern with polling with EventListener - 4번
-         */
-        orderEntity.setCreatedAt(LocalDateTime.now());
         orderRepository.save(orderEntity);
-        log.info("orderEntity: {}", orderEntity.toString());
-        applicationEventPublisher.publishEvent(OrderExternalEventMessagePayload.from(orderEntity));
+        kafkaProducer.send("catalog-topic", orderDto);
 
-        log.info("Kafka Producer sent data from the Order microservice: " + orderDto);
         OrderDto returnValue = mapper.map(orderEntity, OrderDto.class);
+
         return returnValue;
     }
 
