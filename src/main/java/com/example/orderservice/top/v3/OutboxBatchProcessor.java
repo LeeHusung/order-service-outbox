@@ -39,8 +39,6 @@ public class OutboxBatchProcessor {
 
         log.info("Processing {} failed outbox messages", failedOutboxEntries.size());
 
-        //비동기로 안했을 때 왜 위에 1개가 있는데, 아래 로그가 하나도 안나오지?
-        //status도  init이다
         for (Outbox outbox : failedOutboxEntries) {
             OrderExternalEventMessagePayload payload = OrderExternalEventMessagePayload.outboxToPayload(outbox);
             try {

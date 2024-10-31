@@ -41,13 +41,8 @@ public class OrderServiceV3 implements OrderService {
         /**
          * outbox pattern with polling with EventListener - 4번
          */
-//        //event 수신 메서드가 두 개 이상이면?
-
-        //jpa의 @CreateAt를 쓰다보니 tx가 끝날 때 insert가 실행되면서 그때 현재 시간이 저장됨. 그래서 밑 orderEntity에서 createAt이 null로 나옴.
-        //outbox에도 null로 저장되고 payload도 null로 저장됨.
         orderEntity.setCreatedAt(LocalDateTime.now());
         orderRepository.save(orderEntity);
-        //생성시간 null 들어옴.
         log.info("orderEntity: {}", orderEntity.toString());
         applicationEventPublisher.publishEvent(OrderExternalEventMessagePayload.from(orderEntity));
 

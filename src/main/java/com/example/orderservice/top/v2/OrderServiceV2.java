@@ -14,6 +14,7 @@ import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
@@ -29,7 +30,6 @@ public class OrderServiceV2 implements OrderService {
 
     @Override
     @Transactional
-    //예외 처리 여기서 하는게 이게 맞냐? 애초에 하는게 맞냐?
     public OrderDto createOrder(OrderDto orderDto) {
         orderDto.setOrderId(UUID.randomUUID().toString());
         orderDto.setTotalPrice(orderDto.getQty() * orderDto.getUnitPrice());
@@ -43,9 +43,7 @@ public class OrderServiceV2 implements OrderService {
          */
         orderRepository.save(orderEntity);
         saveOutbox(orderEntity);
-        //이거 이렇게하면 메시지에 발행 시간 저장 안될걸?? 테스트해봐야함.
 
-        //event 수신 메서드가 가 두 개 이상이면?
         applicationEventPublisher.publishEvent(OrderExternalEventMessagePayload.from(orderEntity));
 
         log.info("Kafka Producer sent data from the Order microservice: " + orderEntity);

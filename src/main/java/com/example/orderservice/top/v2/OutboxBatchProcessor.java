@@ -27,7 +27,7 @@ public class OutboxBatchProcessor {
     public OutboxBatchProcessor(KafkaTemplate<String, String> kafkaTemplate,
                                 OutboxRepository outboxRepository,
                                 ObjectMapper objectMapper,
-                                @Value("${kafka.topic}") String topic) {
+                                @Value("${kafka.outbox.topic}") String topic) {
         this.kafkaTemplate = kafkaTemplate;
         this.outboxRepository = outboxRepository;
         this.objectMapper = objectMapper;
